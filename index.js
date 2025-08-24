@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
+// db.txt ka exact path
 const dbPath = path.join(__dirname, "db.txt");
 
 // helper → read todos
@@ -19,6 +20,7 @@ const writeTodos = (todos) => {
 
 // 1. return db.txt contents in string format
 const getTodosSync = () => {
+  if (!fs.existsSync(dbPath)) return "[]";
   return fs.readFileSync(dbPath, "utf-8");
 };
 
@@ -34,6 +36,7 @@ const createTodoSync = (todo) => {
   const todos = readTodos();
   todos.push(todo);
   writeTodos(todos);
+  return todo;
 };
 
 // 4. update todo's title OR mark completed
@@ -43,14 +46,17 @@ const updateTodoSync = (id, updates) => {
   if (index !== -1) {
     todos[index] = { ...todos[index], ...updates };
     writeTodos(todos);
+    return todos[index];
   }
+  return null;
 };
 
 // 5. delete todo
 const deleteTodoSync = (id) => {
-  let todos = readTodos();
-  todos = todos.filter((t) => t.id !== id);
-  writeTodos(todos);
+  const todos = readTodos();
+  const filtered = todos.filter((t) => t.id !== id);
+  writeTodos(filtered);
+  return todos.length !== filtered.length; // true if deleted
 };
 
 module.exports = {
