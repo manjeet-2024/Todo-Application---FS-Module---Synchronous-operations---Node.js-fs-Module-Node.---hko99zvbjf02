@@ -17,20 +17,20 @@ function writeTodos(todos) {
   fs.writeFileSync(dbPath, data + (data ? "\n" : ""), "utf-8");
 }
 
-// 1. Get all todos (raw file content)
+// 1. Get all todos (raw file content as string)
 const getTodosSync = () => {
   if (!fs.existsSync(dbPath)) return "";
   return fs.readFileSync(dbPath, "utf-8");
 };
 
-// 2. Get a single todo by ID (raw JSON string)
+// 2. Get a single todo by ID (return string format)
 const getTodoSync = (id) => {
   const todos = readTodos();
-  const todo = todos.find(t => t.id == id); // allow number or string
-  return todo ? JSON.stringify(todo) : null;
+  const todo = todos.find(t => t.id == id); // allow string/number
+  return todo ? JSON.stringify(todo) : "";
 };
 
-// 3. Create a new todo
+// 3. Create a new todo (return object)
 const createTodoSync = (title) => {
   const now = new Date().toISOString();
   const todo = {
@@ -45,11 +45,11 @@ const createTodoSync = (title) => {
   return todo;
 };
 
-// 4. Update an existing todo (return raw JSON string)
+// 4. Update an existing todo (return string format)
 const updateTodoSync = (id, updates) => {
   const todos = readTodos();
   const index = todos.findIndex(t => t.id == id);
-  if (index === -1) return null;
+  if (index === -1) return "";
 
   todos[index] = {
     ...todos[index],
@@ -61,13 +61,12 @@ const updateTodoSync = (id, updates) => {
   return JSON.stringify(todos[index]);
 };
 
-// 5. Delete a todo (return true if deleted, false otherwise)
+// 5. Delete a todo (return updated db.txt contents as string)
 const deleteTodoSync = (id) => {
   const todos = readTodos();
   const filtered = todos.filter(t => t.id != id);
-  const deleted = filtered.length !== todos.length;
   writeTodos(filtered);
-  return deleted;
+  return getTodosSync(); // return new file content
 };
 
 module.exports = {
