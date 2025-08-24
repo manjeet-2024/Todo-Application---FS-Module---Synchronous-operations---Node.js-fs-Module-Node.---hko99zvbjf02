@@ -13,7 +13,7 @@ function readTodos() {
 
 // Helper: Write todos back to db.txt
 function writeTodos(todos) {
-  const data = todos.map(todo => JSON.stringify(todo, null, 2)).join("\n");
+  const data = todos.map(todo => JSON.stringify(todo)).join("\n");
   fs.writeFileSync(dbPath, data + (data ? "\n" : ""), "utf-8");
 }
 
@@ -23,11 +23,11 @@ const getTodosSync = () => {
   return fs.readFileSync(dbPath, "utf-8");
 };
 
-// 2. Get a single todo by ID (return string format)
+// 2. Get a single todo by ID (raw JSON string)
 const getTodoSync = (id) => {
   const todos = readTodos();
-  const todo = todos.find(t => String(t.id) === String(id));
-  return todo ? JSON.stringify(todo, null, 2) : "";
+  const todo = todos.find(t => t.id == id); // allow number or string
+  return todo ? JSON.stringify(todo) : null;
 };
 
 // 3. Create a new todo
@@ -41,15 +41,15 @@ const createTodoSync = (title) => {
     updatedAt: now,
   };
 
-  fs.appendFileSync(dbPath, JSON.stringify(todo, null, 2) + "\n", "utf-8");
+  fs.appendFileSync(dbPath, JSON.stringify(todo) + "\n", "utf-8");
   return todo;
 };
 
-// 4. Update an existing todo (return string format)
+// 4. Update an existing todo (return raw JSON string)
 const updateTodoSync = (id, updates) => {
   const todos = readTodos();
-  const index = todos.findIndex(t => String(t.id) === String(id));
-  if (index === -1) return "";
+  const index = todos.findIndex(t => t.id == id);
+  if (index === -1) return null;
 
   todos[index] = {
     ...todos[index],
@@ -58,15 +58,16 @@ const updateTodoSync = (id, updates) => {
   };
 
   writeTodos(todos);
-  return JSON.stringify(todos[index], null, 2);
+  return JSON.stringify(todos[index]);
 };
 
-// 5. Delete a todo (return updated db.txt contents as string)
+// 5. Delete a todo (return true if deleted, false otherwise)
 const deleteTodoSync = (id) => {
   const todos = readTodos();
-  const filtered = todos.filter(t => String(t.id) !== String(id));
+  const filtered = todos.filter(t => t.id != id);
+  const deleted = filtered.length !== todos.length;
   writeTodos(filtered);
-  return getTodosSync();
+  return deleted;
 };
 
 module.exports = {
