@@ -27,7 +27,7 @@ const getTodosSync = () => {
 // 2. return respective todo in string format
 const getTodoSync = (id) => {
   const todos = readTodos();
-  const todo = todos.find((t) => t.id === id);
+  const todo = todos.find((t) => String(t.id) === String(id)); // 🔥 fixed
   return todo ? JSON.stringify(todo) : null;
 };
 
@@ -42,7 +42,7 @@ const createTodoSync = (todo) => {
 // 4. update todo's title OR mark completed
 const updateTodoSync = (id, updates) => {
   const todos = readTodos();
-  const index = todos.findIndex((t) => t.id === id);
+  const index = todos.findIndex((t) => String(t.id) === String(id)); // 🔥 fixed
   if (index !== -1) {
     todos[index] = { ...todos[index], ...updates };
     writeTodos(todos);
@@ -54,7 +54,7 @@ const updateTodoSync = (id, updates) => {
 // 5. delete todo
 const deleteTodoSync = (id) => {
   const todos = readTodos();
-  const filtered = todos.filter((t) => t.id !== id);
+  const filtered = todos.filter((t) => String(t.id) !== String(id)); // 🔥 fixed
   writeTodos(filtered);
   return todos.length !== filtered.length; // true if deleted
 };
