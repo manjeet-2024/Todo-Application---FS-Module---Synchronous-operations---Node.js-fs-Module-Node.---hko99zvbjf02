@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
+// db.txt ka exact path
 const dbPath = path.join(__dirname, "db.txt");
 
 // helper → read todos
@@ -9,59 +10,69 @@ const readTodos = () => {
     fs.writeFileSync(dbPath, "[]", "utf-8");
   }
   const data = fs.readFileSync(dbPath, "utf-8");
-  return JSON.parse(data || "[]");
+  let todos;
+  try {
+    todos = JSON.parse(data || "[]");
+  } catch (e) {
+    todos = [];
+  }
+  // ensure always array
+  if (!Array.isArray(todos)) {
+    todos = [todos];
+  }
+  return todos;
 };
 
 // helper → write todos
 const writeTodos = (todos) => {
-  fs.writeFileSync(dbPath, JSON.stringify(todos, null, 2), "utf-8");
+  fs.writeFileSync(dbPath, JSON.stringify(todos), "utf-8");
 };
 
-// ✅ getTodosSync: return todos in string
+// 1. return db.txt contents in string format
 const getTodosSync = () => {
+  if (!fs.existsSync(dbPath)) return "[]";
   return fs.readFileSync(dbPath, "utf-8");
 };
 
-// ✅ getTodoSync: return one todo as string
+// 2. return respective todo in string format
 const getTodoSync = (id) => {
   const todos = readTodos();
-  const todo = todos.find((t) => t.id === id);
+  const todo = todos.find((t) => String(t.id) === String(id));
   return todo ? JSON.stringify(todo) : null;
 };
 
-// ✅ createTodoSync: push new todo
+// 3. create todo
 const createTodoSync = (todo) => {
   const todos = readTodos();
   todos.push(todo);
   writeTodos(todos);
-  return "Todo created";
+  return todo;
 };
 
-// ✅ updateTodoSync: fix logic here
-const updateTodoSync = (id, data) => {
+// 4. update todo's title OR mark completed
+const updateTodoSync = (id, updates) => {
   const todos = readTodos();
-  const idx = todos.findIndex((t) => t.id === id);
-
-  if (idx === -1) return "Todo not found";
-
-  // agar title diya hai → update title
-  if (data.title !== undefined) {
-    todos[idx].title = data.title;
+  const index = todos.findIndex((t) => String(t.id) === String(id));
+  if (index !== -1) {
+    todos[index] = { ...todos[index], ...updates };
+    writeTodos(todos);
+    return todos[index];
   }
-
-  // agar completed diya hai → update completed
-  if (data.completed !== undefined) {
-    todos[idx].completed = data.completed;
-  }
-
-  writeTodos(todos);
-  return "Todo updated";
+  return null;
 };
 
-// ✅ deleteTodoSync
+// 5. delete todo
 const deleteTodoSync = (id) => {
   const todos = readTodos();
-  const filtered = todos.filter((t) => t.id !== id);
+  const filtered = todos.filter((t) => String(t.id) !== String(id));
   writeTodos(filtered);
-  return "Todo deleted";
+  return todos.length !== filtered.length; // true if deleted
+};
+
+module.exports = {
+  getTodosSync,
+  getTodoSync,
+  createTodoSync,
+  updateTodoSync,
+  deleteTodoSync,
 };
