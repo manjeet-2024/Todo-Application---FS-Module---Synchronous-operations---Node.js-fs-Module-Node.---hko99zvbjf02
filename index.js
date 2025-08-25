@@ -1,74 +1,64 @@
-const fs = require("fs");
-const path = require("path");
-
-// db.txt ka exact path
-const dbPath = path.join(__dirname, "db.txt");
-
-// helper → read todos
-const readTodos = () => {
-  if (!fs.existsSync(dbPath)) {
-    fs.writeFileSync(dbPath, "[]", "utf-8");
-  }
-  const data = fs.readFileSync(dbPath, "utf-8");
-  let todos;
-  try {
-    todos = JSON.parse(data || "[]");
-  } catch (e) {
-    todos = [];
-  }
-  // ensure always array
-  if (!Array.isArray(todos)) {
-    todos = [todos];
+const fs = require('fs');
+const DB = __dirname + '/db.txt';
+// robustly split consecutive JSON objects separated by newlines
+const parseAll = (text) => {
+  const todos = [];
+  if (!text || text.trim() === '') return todos;
+  let depth = 0;
+  let start = -1;
+  let inString = false;
+  let prev = '';
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (inString) {
+      if (ch === '"' && prev !== '\\') inString = false;
+    } else {
+      if (ch === '"') {
+        inString = true;
+      } else if (ch === '{') {
+        if (depth === 0) start = i;
+        depth += 1;
+      } else if (ch === '}') {
+        depth -= 1;
+        if (depth === 0 && start !== -1) {
+          const slice = text.slice(start, i + 1);
+          try { todos.push(JSON.parse(slice)); } catch (_) {}
+          start = -1;
+        }
+      }
+    }
+    prev = ch;
   }
   return todos;
 };
-
-// helper → write todos
-const writeTodos = (todos) => {
-  fs.writeFileSync(dbPath, JSON.stringify(todos), "utf-8");
-};
-
-// 1. return db.txt contents in string format
+const dumpAll = (arr) => (arr.length ? arr.map((o) => JSON.stringify(o, null, 2)).join('\n') + '\n' : '');
 const getTodosSync = () => {
-  if (!fs.existsSync(dbPath)) return "[]";
-  return fs.readFileSync(dbPath, "utf-8");
+  if (!fs.existsSync(DB)) fs.writeFileSync(DB, '', 'utf-8');
+  return fs.readFileSync(DB, 'utf-8');
 };
-
-// 2. return respective todo in string format
 const getTodoSync = (id) => {
-  const todos = readTodos();
-  const todo = todos.find((t) => String(t.id) === String(id));
-  return todo ? JSON.stringify(todo) : null;
+  if (!fs.existsSync(DB)) fs.writeFileSync(DB, '', 'utf-8');
+  const todos = parseAll(fs.readFileSync(DB, 'utf-8'));
+  const t = todos.find((x) => x && x.id == id);
+  return t ? JSON.stringify(t) : null;
 };
-
-// 3. create todo
-const createTodoSync = (todo) => {
-  const todos = readTodos();
-  todos.push(todo);
-  writeTodos(todos);
-  return todo;
+const createTodoSync = (title) => {
+  const now = new Date().toISOString();
+  const todo = { id: Date.now(), title, isCompleted: false, createdAt: now, updatedAt: now };
+  fs.appendFileSync(DB, JSON.stringify(todo, null, 2) + '\n', 'utf-8');
 };
-
-// 4. update todo's title OR mark completed
 const updateTodoSync = (id, updates) => {
-  const todos = readTodos();
-  const index = todos.findIndex((t) => String(t.id) === String(id));
-  if (index !== -1) {
-    todos[index] = { ...todos[index], ...updates };
-    writeTodos(todos);
-    return todos[index];
-  }
-  return null;
+  const todos = parseAll(fs.readFileSync(DB, 'utf-8'));
+  const idx = todos.findIndex((x) => x && x.id == id);
+  if (idx === -1) return;
+  const ex = todos[idx];
+  todos[idx] = { ...ex, ...updates, id: ex.id, createdAt: ex.createdAt, updatedAt: new Date().toISOString() };
+  fs.writeFileSync(DB, dumpAll(todos), 'utf-8');
 };
-
-// 5. delete todo
 const deleteTodoSync = (id) => {
-  const todos = readTodos();
-  const filtered = todos.filter((t) => String(t.id) !== String(id));
-  writeTodos(filtered);
-  return todos.length !== filtered.length; // true if deleted
+  const todos = parseAll(fs.readFileSync(DB, 'utf-8'));
+  fs.writeFileSync(DB, dumpAll(todos.filter((x) => x && x.id != id)), 'utf-8');
 };
-
 module.exports = {
   getTodosSync,
   getTodoSync,
