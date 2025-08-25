@@ -20,7 +20,7 @@ const readTodos = () => {
   if (!Array.isArray(todos)) {
     todos = [todos];
   }
-  return todos.map((t) => ({ ...t, id: String(t.id) })); // ✅ id normalize
+  return todos;
 };
 
 // helper → write todos
@@ -44,10 +44,9 @@ const getTodoSync = (id) => {
 // 3. create todo
 const createTodoSync = (todo) => {
   const todos = readTodos();
-  const normalized = { ...todo, id: String(todo.id) }; // ✅ id normalize
-  todos.push(normalized);
+  todos.push(todo);
   writeTodos(todos);
-  return normalized;
+  return todo;
 };
 
 // 4. update todo's title OR mark completed
@@ -55,11 +54,7 @@ const updateTodoSync = (id, updates) => {
   const todos = readTodos();
   const index = todos.findIndex((t) => String(t.id) === String(id));
   if (index !== -1) {
-    todos[index] = {
-      ...todos[index],
-      ...updates,
-      id: String(todos[index].id), // ✅ id preserve as string
-    };
+    todos[index] = { ...todos[index], ...updates };
     writeTodos(todos);
     return todos[index];
   }
