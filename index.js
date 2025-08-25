@@ -10,7 +10,17 @@ const readTodos = () => {
     fs.writeFileSync(dbPath, "[]", "utf-8");
   }
   const data = fs.readFileSync(dbPath, "utf-8");
-  return JSON.parse(data || "[]");
+  let todos;
+  try {
+    todos = JSON.parse(data || "[]");
+  } catch (e) {
+    todos = [];
+  }
+  // ensure always array
+  if (!Array.isArray(todos)) {
+    todos = [todos];
+  }
+  return todos;
 };
 
 // helper → write todos
@@ -27,7 +37,7 @@ const getTodosSync = () => {
 // 2. return respective todo in string format
 const getTodoSync = (id) => {
   const todos = readTodos();
-  const todo = todos.find((t) => String(t.id) === String(id)); // 🔥 fixed
+  const todo = todos.find((t) => String(t.id) === String(id));
   return todo ? JSON.stringify(todo) : null;
 };
 
@@ -42,7 +52,7 @@ const createTodoSync = (todo) => {
 // 4. update todo's title OR mark completed
 const updateTodoSync = (id, updates) => {
   const todos = readTodos();
-  const index = todos.findIndex((t) => String(t.id) === String(id)); // 🔥 fixed
+  const index = todos.findIndex((t) => String(t.id) === String(id));
   if (index !== -1) {
     todos[index] = { ...todos[index], ...updates };
     writeTodos(todos);
@@ -54,7 +64,7 @@ const updateTodoSync = (id, updates) => {
 // 5. delete todo
 const deleteTodoSync = (id) => {
   const todos = readTodos();
-  const filtered = todos.filter((t) => String(t.id) !== String(id)); // 🔥 fixed
+  const filtered = todos.filter((t) => String(t.id) !== String(id));
   writeTodos(filtered);
   return todos.length !== filtered.length; // true if deleted
 };
